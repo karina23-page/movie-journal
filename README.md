@@ -17,7 +17,7 @@
 ### 🌐 Web Application Interface
 | Main Movies Page | Movie Details & Scenes |
 | :---: | :---: |
-| ![Main Interface](docs/screenshots/demo1.jpg) | ![Movie Details](docs/screenshots/demo2.jpg) |
+| ![Main Interface](docs/screenshots/demo1.jpg) | ![Movie Details](docs/screenshots/demo3.jpg) |
 
 ---
 
