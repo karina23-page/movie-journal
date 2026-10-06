@@ -2,59 +2,60 @@
 
 {% block content %}
 
-<section class="hero">
-
-    <p class="hero-text">
-        Build a custom archive of the movies you watch. Record your personal feedback, save iconic scenes and songs, and curate a collection built around your unique perspective.
-    </p>
-
+<section class="movie-hero" style="background-image:url('{{ movie.background }}')">
+    <a href="/" class="home-button">
+        ← Home
+    </a>
+    <div class="movie-header">
+        <h1>{{ movie.title }}</h1>
+    </div>
 </section>
 
+<div class="movie-layout">
 
-<section class="movies">
-
-    <div class="movies-header">
-
-        <a href="/add" class="primary-button">
-
-            ➕ Add New Movie
-
-        </a>
-
-    </div>
-
-    <div class="movie-grid">
-
-        {% for movie in movies %}
-
-        <div class="movie-card">
-
-            <a href="/movie/{{ movie.slug }}">
-
-                <img src="{{ movie.poster }}">
-
-                <h3>{{ movie.title }}</h3>
-                <p>{{ movie.short_description }}</p>
-
-            </a>
-
-            <div class="movie-actions">
-
-                <a href="/delete/{{ movie.id }}"
-                class="delete-button">
-
-                    🗑 Delete
-
-                </a>
-
-             </div>
-
+    <!-- SIDEBAR (Button removed from here) -->
+    <aside class="floating-sidebar">
+        <div class="info-box">
+            <h3>🎵 Soundtrack</h3>
+            <p>{{ movie.soundtrack }}</p>
         </div>
 
+        <div class="info-box">
+            <h3>🍿 Snack Pairing</h3>
+            <p>{{ movie.snack }}</p>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="movie-content">
+
+        <section class="main-thoughts">
+            <h2>My Thoughts</h2>
+            <p>{{ movie.main_thoughts }}</p>
+        </section>
+
+        {% for scene in scenes %}
+        <section class="scene-card">
+            <img src="{{ scene.image }}" class="scene-image">
+            <div class="scene-text">
+                <h2>{{ scene.title }}</h2>
+                <p>{{ scene.description }}</p>
+                <a href="/scene/{{ scene.id }}/delete" class="delete-scene-button">
+                    🗑 Delete Scene
+                </a>
+            </div>
+        </section>
         {% endfor %}
 
-    </div>
+        <!-- ADD SCENE BUTTON AT THE BOTTOM -->
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="/movie/{{ movie.id }}/add-scene" class="add-scene-button">
+                ➕ Add Scene
+            </a>
+        </div>
 
-</section>
+    </main>
+
+</div>
 
 {% endblock %}

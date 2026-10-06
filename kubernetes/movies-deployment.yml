@@ -27,6 +27,19 @@ spec:
             ports: 
             - containerPort: 5000
 
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 5000
+              initialDelaySeconds: 5
+              periodSeconds: 5
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: 5000
+              initialDelaySeconds: 10
+              periodSeconds: 5
+
             envFrom:
             - configMapRef: 
                 name: movie-conf

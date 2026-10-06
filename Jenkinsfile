@@ -7,10 +7,11 @@ pipeline {
         IMAGE_NAME = "tprff2301/movie-app"
         IMAGE_TAG = "${BUILD_NUMBER}"
 
-        K3S_HOST = "13.51.139.216"
+        K3S_HOST = "16.171.106.68"
     }
 
     stages {
+
 
         stage('Build') {
 
@@ -23,7 +24,19 @@ pipeline {
                 '''
             }
         }
-
+        
+        stage('Security Scan') {
+            steps {
+                sh '''
+                docker run --rm \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    aquasec/trivy:latest image \
+                    --severity CRITICAL \
+                    --exit-code 1 \
+                    tprff2301/movie-app:${BUILD_NUMBER}
+                '''
+            }
+        }
         stage('Push') {
 
             steps {

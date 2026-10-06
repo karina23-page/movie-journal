@@ -14,6 +14,13 @@ resource "aws_security_group" "jenkins-security" {
             cidr_blocks = ["0.0.0.0/0"]
         }
 
+        ingress{
+            from_port = 8080
+            to_port = 8080
+            protocol = "tcp"
+            cidr_blocks = ["0.0.0.0/0"]
+        }
+
         egress{
             from_port = 0
             to_port = 0
@@ -33,7 +40,7 @@ data "aws_ami" "ubuntu" {
 
 resource "aws_instance" "jenkins" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.small"
+  instance_type          = "t3.small" 
 
   key_name = var.key_name
 
@@ -53,3 +60,4 @@ resource "aws_instance" "jenkins" {
 resource "aws_eip" "jenkins"{
     instance = aws_instance.jenkins.id
 }
+
