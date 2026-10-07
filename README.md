@@ -134,23 +134,21 @@ cd movie-journal
 </details>
 
 <details>
-<summary><b>Step 2: Create the S3 Bucket for Terraform State</b></summary>
+<summary><b>Step 2: Create AWS Resources</b></summary>
 
-Create an S3 bucket that will be used to store the Terraform remote state.
-
-You can create the bucket from the AWS Console or with AWS CLI:
+Create an S3 bucket for Terraform remote state.
 
 ```bash
 aws s3 mb s3://my-movie-tfstate-bucket --region eu-north-1
 ```
 
-Make sure the bucket name matches the name configured in:
+Make sure the bucket name matches the one configured in:
 
 ```text
 terraform/backend.tf
 ```
 
-For example:
+Example:
 
 ```hcl
 terraform {
@@ -167,7 +165,30 @@ terraform {
 </details>
 
 <details>
-<summary><b>Step 3: Configure Terraform Variables</b></summary>
+<summary><b>Step 3: Create SSH Key and Docker Hub Token</b></summary>
+
+Before provisioning and configuring the servers, make sure you have:
+
+### SSH Key
+
+Create an SSH key for accessing the EC2 instances and save it as:
+
+```text
+~/.ssh/movies
+```
+
+The corresponding public key should be used when creating the EC2 instances.
+
+### Docker Hub Token
+
+Create a Docker Hub access token that Jenkins will use to authenticate with Docker Hub.
+
+You will add this token to Jenkins in a later step.
+
+</details>
+
+<details>
+<summary><b>Step 4: Provision AWS Infrastructure (Terraform)</b></summary>
 
 Go to the Terraform directory:
 
@@ -175,52 +196,27 @@ Go to the Terraform directory:
 cd terraform
 ```
 
-Review the Terraform configuration and make sure the AWS region, instance types, key pair name, and other required variables match your environment.
-
-For example:
-
-```bash
-terraform.tfvars
-```
-
-If you are using an existing AWS EC2 key pair, make sure its name matches the value used by Terraform.
-
-Then initialize Terraform:
+Initialize Terraform:
 
 ```bash
 terraform init
 ```
 
-</details>
-
-<details>
-<summary><b>Step 4: Provision AWS Infrastructure (Terraform)</b></summary>
-
-Create the AWS infrastructure:
+Create the infrastructure:
 
 ```bash
 terraform plan
 terraform apply
 ```
 
-Terraform provisions the required infrastructure, including:
+Terraform provisions the required AWS infrastructure, including:
 
-- AWS VPC and networking
+- VPC and networking
 - Security Groups
 - Jenkins EC2 instance
 - Movie application EC2 instance
-- Required AWS resources
 
 After Terraform finishes, note the public IP addresses from the Terraform outputs.
-
-For example:
-
-```text
-jenkins_public_ip = xx.xx.xx.xx
-movie_server_public_ip = xx.xx.xx.xx
-```
-
-These IP addresses will be required in the Ansible inventory and Jenkins configuration.
 
 </details>
 
@@ -235,63 +231,24 @@ ansible/inventory.txt
 
 with the public IP addresses of the newly created servers.
 
-For example:
+The inventory should also specify the SSH user and private key:
 
 ```ini
-[jenkins]
-JENKINS_PUBLIC_IP
+[movies]
+13.51.139.216 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/movies
 
-[movie]
-MOVIE_SERVER_PUBLIC_IP
+[jenkins]
+56.228.39.83 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/movies
 ```
 
-Replace the placeholders with the actual IP addresses returned by Terraform.
+Replace the IP addresses with the actual public IP addresses returned by Terraform.
 
-Example:
-
-```ini
-[jenkins]
-12.34.56.78
-
-[movie]
-98.76.54.32
-```
-
-Also make sure the SSH user and private key configuration in the inventory or Ansible configuration match the EC2 instances.
-
-> **Important:** If the EC2 instances are recreated and receive new public IP addresses, update `inventory.txt` again before running the Ansible playbooks.
+> **Important:** If the EC2 instances are recreated and receive new IP addresses, update `inventory.txt` before running the Ansible playbooks.
 
 </details>
 
 <details>
-<summary><b>Step 6: Configure Ansible SSH Access</b></summary>
-
-Make sure Ansible can connect to the EC2 instances using SSH.
-
-Test the connection:
-
-```bash
-ansible all -i inventory.txt -m ping
-```
-
-A successful connection should return:
-
-```text
-SUCCESS
-```
-
-If SSH access fails, verify:
-
-- The EC2 instance is running.
-- The IP address in `inventory.txt` is correct.
-- The correct SSH private key is being used.
-- The EC2 Security Group allows SSH on port `22`.
-- The correct remote user is configured.
-
-</details>
-
-<details>
-<summary><b>Step 7: Configure Server Instances (Ansible)</b></summary>
+<summary><b>Step 6: Configure Server Instances (Ansible)</b></summary>
 
 From the Ansible directory:
 
@@ -299,7 +256,7 @@ From the Ansible directory:
 cd ../ansible
 ```
 
-Install and configure Jenkins on the CI/CD server:
+Install and configure Jenkins:
 
 ```bash
 ansible-playbook -i inventory.txt jenkins.yml
@@ -311,63 +268,33 @@ Provision Docker and K3s on the movie application server:
 ansible-playbook -i inventory.txt movies.yml
 ```
 
-The Ansible playbooks configure the servers with the required software and deployment environment.
-
 </details>
 
 <details>
-<summary><b>Step 8: Update IP Addresses in the Jenkinsfile</b></summary>
+<summary><b>Step 7: Update IP Address in the Jenkinsfile</b></summary>
 
-After the EC2 instances are created, check the repository's:
+Open:
 
 ```text
 Jenkinsfile
 ```
 
-If the pipeline contains a hardcoded server IP address, update it with the **new public IP address of the movie application server**.
+Update the hardcoded `SERVER_IP` with the **public IP address of the movie application server** created by Terraform.
 
 For example:
 
 ```groovy
 environment {
-    SERVER_IP = 'MOVIE_SERVER_PUBLIC_IP'
+    SERVER_IP = '13.51.139.216'
 }
 ```
 
-Replace:
-
-```text
-MOVIE_SERVER_PUBLIC_IP
-```
-
-with the actual IP returned by Terraform.
-
-### When do you need to update the Jenkinsfile?
-
-You need to update the Jenkinsfile whenever the application server's IP address changes.
-
-For example, if Terraform destroys and recreates the EC2 instance:
-
-```text
-Old movie server IP
-        ↓
-EC2 destroyed
-        ↓
-New EC2 instance created
-        ↓
-New public IP
-        ↓
-Update Jenkinsfile
-        ↓
-Commit and push changes
-```
-
-> **Important:** Do not update the Jenkinsfile with the Jenkins server IP. The deployment target should be the **movie application / K3s server IP**.
+Replace `13.51.139.216` with your actual movie server IP address.
 
 </details>
 
 <details>
-<summary><b>Step 9: Configure Jenkins Plugins</b></summary>
+<summary><b>Step 8: Configure Jenkins Plugins</b></summary>
 
 Open Jenkins:
 
@@ -375,28 +302,20 @@ Open Jenkins:
 http://<JENKINS_PUBLIC_IP>:8080
 ```
 
-Install the plugins required for the CI/CD pipeline.
-
-The exact plugin list may vary depending on the Jenkins configuration, but the pipeline requires support for GitHub, credentials, Docker, SSH, and pipeline execution.
-
-Recommended plugins include:
+Install the plugins required by the pipeline, including:
 
 - **Git**
 - **GitHub**
-- **GitHub Integration**
 - **Credentials Binding**
 - **SSH Agent**
 - **Pipeline**
 - **Docker Pipeline**
-- **Docker**
-- **Kubernetes CLI** if the pipeline uses the `kubectl` Jenkins integration
-
-After installing the plugins, restart Jenkins if required.
+- **Kubernetes CLI** if required by the Jenkinsfile
 
 </details>
 
 <details>
-<summary><b>Step 10: Add Jenkins Credentials</b></summary>
+<summary><b>Step 9: Add Jenkins Credentials</b></summary>
 
 Go to:
 
@@ -404,11 +323,9 @@ Go to:
 Jenkins → Manage Jenkins → Credentials
 ```
 
-Add the credentials required by the pipeline.
+Add the credentials created earlier:
 
-### Docker Hub credentials
-
-Create credentials for Docker Hub:
+### Docker Hub
 
 ```text
 ID: movie-docker-token-id
@@ -416,42 +333,28 @@ ID: movie-docker-token-id
 
 Use your Docker Hub username and access token.
 
-The Jenkinsfile should reference the same credential ID:
-
-```groovy
-credentialsId: 'movie-docker-token-id'
-```
-
-### SSH private key
-
-Add the private SSH key used to access the movie application server.
-
-For example:
+### SSH Key
 
 ```text
 ID: movie-ec2-key
 ```
 
-The Jenkinsfile should reference the same credential ID when establishing the SSH connection.
+Add the private SSH key used to access the movie application server.
 
-> **Important:** The credential IDs in Jenkins must exactly match the IDs referenced in the Jenkinsfile.
+> **Important:** The credential IDs must match the IDs referenced in the `Jenkinsfile`.
 
 </details>
 
 <details>
-<summary><b>Step 11: Configure Jenkins Pipeline</b></summary>
+<summary><b>Step 10: Configure Jenkins Pipeline</b></summary>
 
-Create a new Jenkins Pipeline job.
-
-Select:
+Create a new Jenkins Pipeline job:
 
 ```text
 New Item → Pipeline
 ```
 
-Configure Jenkins to use the repository's `Jenkinsfile`.
-
-If using Pipeline script from SCM:
+Select:
 
 ```text
 Definition:
@@ -467,7 +370,7 @@ Script Path:
 Jenkinsfile
 ```
 
-Enable the GitHub webhook trigger:
+Enable:
 
 ```text
 GitHub hook trigger for GITScm polling
@@ -476,7 +379,7 @@ GitHub hook trigger for GITScm polling
 </details>
 
 <details>
-<summary><b>Step 12: Configure the GitHub Webhook</b></summary>
+<summary><b>Step 11: Configure the GitHub Webhook</b></summary>
 
 Open:
 
@@ -484,27 +387,21 @@ Open:
 GitHub Repository → Settings → Webhooks
 ```
 
-Add a webhook pointing to:
+Add:
 
 ```text
 http://<JENKINS_PUBLIC_IP>:8080/github-webhook/
 ```
 
-Replace `<JENKINS_PUBLIC_IP>` with the public IP address of the Jenkins EC2 instance.
+Replace `<JENKINS_PUBLIC_IP>` with the public IP address of the Jenkins server.
 
-For example:
-
-```text
-http://12.34.56.78:8080/github-webhook/
-```
-
-Set the webhook content type to:
+Set the content type to:
 
 ```text
 application/json
 ```
 
-Enable the option to trigger the webhook on:
+Select:
 
 ```text
 Just the push event
@@ -513,28 +410,9 @@ Just the push event
 </details>
 
 <details>
-<summary><b>Step 13: Verify Jenkins Configuration</b></summary>
+<summary><b>Step 12: Trigger the Automated Deployment</b></summary>
 
-Before triggering a deployment, verify the following:
-
-- [ ] Terraform infrastructure is running.
-- [ ] S3 backend bucket exists.
-- [ ] `ansible/inventory.txt` contains the current EC2 IP addresses.
-- [ ] Ansible can connect to both servers.
-- [ ] Jenkins is accessible on port `8080`.
-- [ ] Required Jenkins plugins are installed.
-- [ ] Docker Hub credentials are configured.
-- [ ] SSH private key credentials are configured.
-- [ ] Credential IDs match the Jenkinsfile.
-- [ ] The Jenkinsfile contains the current movie server IP if required.
-- [ ] GitHub webhook points to the current Jenkins public IP.
-
-</details>
-
-<details>
-<summary><b>Step 14: Trigger the Automated Build and Deployment</b></summary>
-
-After the infrastructure and Jenkins configuration are complete, make a change to the repository and push it to GitHub:
+Make a change to the repository and push it to GitHub:
 
 ```bash
 git add .
@@ -556,29 +434,36 @@ The pipeline then:
 Monitor the deployment from:
 
 ```text
-Jenkins → Your Pipeline Job → Console Output
+Jenkins → Pipeline Job → Console Output
 ```
 
 </details>
 
 <details>
-<summary><b>Step 15: Verify the Application</b></summary>
+<summary><b>Step 13: Verify and Access the Application</b></summary>
 
-After the Jenkins pipeline completes successfully, verify the Kubernetes deployment:
-
-```bash
-kubectl get pods
-kubectl get services
-kubectl get ingress
-```
-
-Check that the application pods are running:
+After the Jenkins pipeline completes successfully, verify the Kubernetes resources:
 
 ```bash
 kubectl get pods -n movie-space
+kubectl get services -n movie-space
+kubectl get ingress -n movie-space
 ```
 
-Finally, access the application through the configured Ingress URL or domain.
+Check the Ingress output:
 
-🎬 **Deployment complete!**
+```bash
+kubectl get ingress -n movie-space
+```
+
+The application can then be accessed through the configured Ingress address or domain.
+
+For example:
+
+```text
+http://<MOVIE_SERVER_IP>
+```
+
+Open the address in a browser to access the Movie Journal website. 🎬
+
 </details>
