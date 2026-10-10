@@ -30,7 +30,6 @@ with app.app_context():
         main_thoughts="""
 I absolutely love this movie. Its atmosphere feels magical,
 yet deeply dark and heartbreaking at the same time.
-
 The way I interpret Pan's Labyrinth is as a story about
 the painful transition from childhood into adulthood.
 
