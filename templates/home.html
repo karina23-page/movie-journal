@@ -2,46 +2,60 @@
 
 {% block content %}
 
-<header class="home-header">
-    <h1>Charlie's Movie Journal 🎬</h1>
-    <p>A collection of films, favorite scenes, and personal thoughts.</p>
-
-    <a href="{{ url_for('add_movie') }}" class="primary-button">
-        ➕ Add New Movie
+<section class="movie-hero" style="background-image:url('{{ movie.background }}')">
+    <a href="/" class="home-button">
+        ← Home
     </a>
-</header>
+    <div class="movie-header">
+        <h1>{{ movie.title }}</h1>
+    </div>
+</section>
 
-<main class="movie-collection">
+<div class="movie-layout">
 
-    {% for movie in movies %}
+    <!-- SIDEBAR (Button removed from here) -->
+    <aside class="floating-sidebar">
+        <div class="info-box">
+            <h3>🎵 Soundtrack</h3>
+            <p>{{ movie.soundtrack }}</p>
+        </div>
 
-    <article class="movie-card">
+        <div class="info-box">
+            <h3>🍿 Snack Pairing</h3>
+            <p>{{ movie.snack }}</p>
+        </div>
+    </aside>
 
-        <a href="{{ url_for('movie', slug=movie.slug) }}"
-           class="movie-card-link">
+    <!-- MAIN CONTENT -->
+    <main class="movie-content">
 
-            <img
-                src="{{ movie.poster }}"
-                alt="{{ movie.title }}"
-                class="movie-poster"
-            >
+        <section class="main-thoughts">
+            <h2>My Thoughts</h2>
+            <p>{{ movie.main_thoughts }}</p>
+        </section>
 
-            <h2>{{ movie.title }}</h2>
+        {% for scene in scenes %}
+        <section class="scene-card">
+            <img src="{{ scene.image }}" class="scene-image">
+            <div class="scene-text">
+                <h2>{{ scene.title }}</h2>
+                <p>{{ scene.description }}</p>
+                <a href="/scene/{{ scene.id }}/delete" class="delete-scene-button">
+                    🗑 Delete Scene
+                </a>
+            </div>
+        </section>
+        {% endfor %}
 
-        </a>
+        <!-- ADD SCENE BUTTON AT THE BOTTOM -->
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="/movie/{{ movie.id }}/add-scene" class="add-scene-button">
+                ➕ Add Scene
+            </a>
+        </div>
 
-        <p>{{ movie.short_description }}</p>
+    </main>
 
-    </article>
-
-    {% else %}
-
-    <p class="empty-message">
-        Your journal is empty. Add your first movie to get started!
-    </p>
-
-    {% endfor %}
-
-</main>
+</div>
 
 {% endblock %}
