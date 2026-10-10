@@ -127,7 +127,7 @@ The observability stack is deployed via **Helm** in the `monitoring` namespace a
 <summary><b>Step 1: Clone the Repository</b></summary>
 
 ```bash
-git clone https://github.com/your-username/movie-journal.git
+git clone https://github.com/karina23-page/movie-journal
 cd movie-journal
 ```
 
@@ -259,13 +259,13 @@ cd ../ansible
 Install and configure Jenkins:
 
 ```bash
-ansible-playbook -i inventory.txt jenkins.yml
+ansible-playbook -i templates/inventory.txt jenkins.yml
 ```
 
 Provision Docker and K3s on the movie application server:
 
 ```bash
-ansible-playbook -i inventory.txt movies.yml
+ansible-playbook -i templates/inventory.txt movies.yml
 ```
 
 </details>
@@ -306,11 +306,10 @@ Install the plugins required by the pipeline, including:
 
 - **Git**
 - **GitHub**
-- **Credentials Binding**
 - **SSH Agent**
 - **Pipeline**
 - **Docker Pipeline**
-- **Kubernetes CLI** if required by the Jenkinsfile
+- **Kubernetes CLI** 
 
 </details>
 
@@ -364,7 +363,7 @@ SCM:
 Git
 
 Repository:
-https://github.com/your-username/movie-journal.git
+https://github.com/your_username/movie-journal
 
 Script Path:
 Jenkinsfile
