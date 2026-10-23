@@ -7,7 +7,7 @@ pipeline {
         IMAGE_NAME = "tprff2301/movie-app"
         IMAGE_TAG = "${BUILD_NUMBER}"
 
-        K3S_HOST = "13.63.25.55"
+        K3S_HOST = "13.61.225.45"
     }
 
     stages {
