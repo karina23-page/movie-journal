@@ -29,6 +29,13 @@
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
       args:
         creates: /usr/local/bin/helm
+    
+    - name: Make monitoring script executable
+      ansible.builtin.file:
+        path: /home/ubuntu/movie/monitoring/install-monitoring.sh
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
 
     - name: Install prometheus and grafana
       shell: |
